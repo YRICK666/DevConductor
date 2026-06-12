@@ -13,7 +13,7 @@ DevConductor orchestrates external coding agents. It does not replace them and d
 5. Complete, reviewable run records
 6. Small local-first milestones
 
-## Planned Stage 1 flow
+## Planned executable flow
 
 ```text
 TaskSpec
@@ -52,6 +52,15 @@ Runs deterministic tests and policy checks. A model's statement that tests passe
 ### Schemas
 
 Define task input, agent execution request, command result, verification result, and final run report.
+
+The current implemented schema slice is intentionally small:
+
+- `TaskSpec`, `TaskConstraints`, and `TaskBudget` describe task input.
+- `CommandResult` records real process facts only.
+- `VerificationResult` wraps deterministic command-backed verification.
+- `RunReport` records worker output, changed files, diff text, verification results, errors, and human-approval status.
+
+Vendor-specific data belongs in explicit `extensions` dictionaries. Unknown top-level fields are rejected.
 
 ## Deferred decisions
 
