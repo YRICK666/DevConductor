@@ -43,7 +43,13 @@ Creates and removes isolated Git worktrees, records the base revision, and colle
 
 ### Command runner
 
-Runs approved commands with timeout, cancellation, output capture, and secret redaction.
+Runs local commands through `asyncio.create_subprocess_exec` with argument arrays,
+timeout handling, working-directory support, inherited environment plus explicit
+overrides, output capture, and structured `CommandResult` records.
+
+The Stage 2 implementation does not approve commands or enforce allow/deny
+policies. It reliably cleans up the directly started process on timeout; full
+cross-platform process-tree termination is deferred.
 
 ### Verifier
 
@@ -74,4 +80,3 @@ The following are intentionally deferred until the single-worker CLI works:
 - MCP server
 - Automatic model selection
 - Parallel task DAG
-
