@@ -65,3 +65,24 @@ Only process exit codes, parsed test artifacts, and rule-based checks determine 
 - A model cannot approve its own implementation.
 - The orchestrator needs a controlled command runner and structured verification records.
 
+---
+
+## ADR-004: Pydantic 2 contracts for Stage 1 schemas
+
+**Status:** Accepted
+**Date:** 2026-06-12
+
+### Context
+
+Stage 1 needs structured task, command, verification, and run-report contracts before adding agent adapters or execution services.
+
+### Decision
+
+Use Python 3.12 and Pydantic 2 models for external and persisted contracts. Reject unknown top-level fields, keep vendor-specific fields under `extensions`, and use argument arrays for commands instead of shell strings.
+
+### Consequences
+
+- Invalid inputs fail before orchestration begins.
+- Core schemas remain vendor-neutral.
+- Later command runner and adapter implementations can depend on typed contracts without introducing their own parsing conventions.
+
