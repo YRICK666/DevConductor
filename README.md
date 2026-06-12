@@ -6,7 +6,7 @@ Its goal is to coordinate coding agents such as Codex, Claude Code, and DeepSeek
 
 ## Current status
 
-Stage 1: core Python contracts are being introduced.
+Stage 2: controlled local command execution is being introduced.
 
 The first executable milestone remains a local single-worker CLI:
 
@@ -64,5 +64,14 @@ The first implemented contracts are:
 5. `VerificationResult`
 6. `RunReport`
 
-Adapter, command runner, worktree, API, database, frontend, and scheduling behavior are still deferred.
+## Stage 2 command runner
 
+The controlled `CommandRunner` executes local commands from argument arrays with
+`asyncio.create_subprocess_exec`, captures stdout and stderr, records real exit
+codes, supports working directories, applies environment overrides on top of the
+inherited environment, and returns `CommandResult`.
+
+Timeout handling reliably terminates the directly started process. Full
+cross-platform process-tree termination is intentionally deferred.
+
+Adapter, worktree, API, database, frontend, approval policy, and scheduling behavior are still deferred.

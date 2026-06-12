@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import field_validator, model_validator
+from pydantic import ConfigDict, field_validator, model_validator
 
 from backend.app.schemas.base import ContractModel
 from backend.app.schemas.task import _validate_command_arguments, _validate_non_empty_string
@@ -11,6 +11,12 @@ from backend.app.schemas.task import _validate_command_arguments, _validate_non_
 
 class CommandResult(ContractModel):
     """Facts captured from a real process execution."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=False,
+        validate_assignment=True,
+    )
 
     command: list[str]
     exit_code: int | None
