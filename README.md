@@ -1,6 +1,6 @@
-# AgentForge
+# DevConductor
 
-AgentForge is a human-led multi-agent software engineering orchestration platform.
+DevConductor is a human-led multi-agent software engineering orchestration platform.
 
 Its goal is to coordinate coding agents such as Codex, Claude Code, and DeepSeek in isolated workspaces, verify their work with deterministic tools, and require human approval before code is accepted.
 
@@ -46,3 +46,4 @@ Define the Stage 1 contracts:
 3. `CommandRunner`
 4. `WorktreeManager`
 5. `RunReport`
+

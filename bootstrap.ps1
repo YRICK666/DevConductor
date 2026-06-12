@@ -1,5 +1,5 @@
 param(
-    [string]$ProjectRoot = "G:\AI-Workstation\agent-forge"
+    [string]$ProjectRoot = "G:\AI-Workstation\dev-conductor"
 )
 
 $ErrorActionPreference = "Stop"
@@ -65,15 +65,16 @@ try {
     }
 
     Write-Host ""
-    Write-Host "AgentForge project created at:" -ForegroundColor Green
+    Write-Host "DevConductor project created at:" -ForegroundColor Green
     Write-Host "  $ProjectRoot"
     Write-Host ""
     Write-Host "Review the files, then create the initial commit with:"
     Write-Host '  git add .'
-    Write-Host '  git commit -m "chore: bootstrap AgentForge repository"'
+    Write-Host '  git commit -m "chore: bootstrap DevConductor repository"'
     Write-Host ""
     Write-Host "Verify Codex instructions with:"
     Write-Host '  codex --ask-for-approval never "Summarize the repository instructions and current milestone. Do not modify files."'
 } finally {
     Pop-Location
 }
+

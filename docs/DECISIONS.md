@@ -64,3 +64,4 @@ Only process exit codes, parsed test artifacts, and rule-based checks determine 
 - Results are auditable.
 - A model cannot approve its own implementation.
 - The orchestrator needs a controlled command runner and structured verification records.
+

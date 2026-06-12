@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-AgentForge orchestrates external coding agents. It does not replace them and does not trust their textual claims as verification.
+DevConductor orchestrates external coding agents. It does not replace them and does not trust their textual claims as verification.
 
 ## Core principles
 
@@ -65,3 +65,4 @@ The following are intentionally deferred until the single-worker CLI works:
 - MCP server
 - Automatic model selection
 - Parallel task DAG
+

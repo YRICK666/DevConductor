@@ -1,8 +1,8 @@
-# AgentForge Repository Instructions
+# DevConductor Repository Instructions
 
 ## 1. Project mission
 
-AgentForge is a human-led multi-agent software engineering orchestration platform.
+DevConductor is a human-led multi-agent software engineering orchestration platform.
 
 The platform will coordinate coding agents such as Codex, Claude Code, and DeepSeek while keeping execution isolated, verification deterministic, and final acceptance under human control.
 
@@ -193,3 +193,4 @@ A task is complete only when:
 - The final diff contains no unrelated changes or secrets.
 - Documentation is consistent with the implementation.
 - The result is reviewable by a human before merge.
+
