@@ -35,7 +35,19 @@ Owns task state and sequencing. It does not contain vendor-specific CLI argument
 
 ### Agent adapters
 
-Translate a vendor-neutral execution request into a Codex, Claude Code, or DeepSeek process invocation.
+Translate a vendor-neutral execution request into a Codex, Claude Code,
+DeepSeek, or Gemini process invocation. Adapters do not create worktrees, run
+verification, approve changes, commit, merge, or push.
+
+The Stage 5 `CodexAdapter` implements the shared `AgentAdapter` interface and
+invokes the local Codex CLI through `CommandRunner`. It passes long prompts via
+stdin using `codex --ask-for-approval never --sandbox workspace-write exec
+--json --ephemeral -`, parses JSONL events, and returns a structured
+`AgentExecutionResult`.
+
+Codex JSONL output is advisory agent output only. It can provide a final message,
+session ID, token usage, and execution errors, but it is never accepted as proof
+that tests passed or that code should be accepted.
 
 ### Workspace
 
@@ -58,7 +70,8 @@ workspace branches are only deleted when requested.
 
 Runs local commands through `asyncio.create_subprocess_exec` with argument arrays,
 timeout handling, working-directory support, inherited environment plus explicit
-overrides, output capture, and structured `CommandResult` records.
+overrides, optional UTF-8 stdin input, output capture, and structured
+`CommandResult` records.
 
 The Stage 2 implementation does not approve commands or enforce allow/deny
 policies. It reliably cleans up the directly started process on timeout; full
@@ -84,6 +97,8 @@ Define task input, agent execution request, command result, verification result,
 The current implemented schema slice is intentionally small:
 
 - `TaskSpec`, `TaskConstraints`, and `TaskBudget` describe task input.
+- `AgentExecutionRequest`, `AgentExecutionResult`, `AgentRunStatus`, and
+  `AgentUsage` describe vendor-neutral agent invocation contracts.
 - `CommandResult` records real process facts only.
 - `VerificationResult` wraps deterministic command-backed verification.
 - `VerificationSpec` describes a deterministic verification command.
