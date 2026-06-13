@@ -197,6 +197,7 @@ async def test_successful_run_reaches_awaiting_approval_and_keeps_review_data() 
     assert "Do not commit" in agent.requests[0].prompt
     assert "Do not merge" in agent.requests[0].prompt
     assert "Do not push" in agent.requests[0].prompt
+    assert "Do not repeat the full deterministic verification suite" in agent.requests[0].prompt
     assert verifier.calls == [(["verification-1"], workspace().worktree_path)]
     assert report.agent_result == agent.result
     assert report.workspace == workspace_manager.handle

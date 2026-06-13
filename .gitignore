@@ -33,3 +33,6 @@ Thumbs.db
 
 # Local temporary files
 .tmp/
+
+# Locally generated Agent task prompts
+prompts/*.md

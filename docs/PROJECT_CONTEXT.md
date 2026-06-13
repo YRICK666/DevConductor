@@ -58,9 +58,12 @@ Stage 7：结构化 `RunEvent` 事件流。
 ## 模型使用策略
 
 - 不需要模型：Git、测试、Lint、类型检查、安全扫描。
-- `gpt-5.4-mini`：文档、扫描、简单测试、小范围代码修改。
-- `gpt-5.5`：架构、跨模块实现、复杂问题和最终审查。
-- 轻量模型失败后再升级，不默认使用最强模型。
+- Codex profile `mini`：默认 profile，用于文档、扫描、简单测试、小范围代码修改。
+- Codex profile `standard`：用于中等复杂度实现和常规修复。
+- Codex profile `strong`：用于架构、跨模块实现、复杂问题和最终审查。
+- 新任务默认使用 `mini`，不得静默继承全局 Codex 模型配置。
+- `max_cost_usd` 当前是 advisory cost target；在没有可信 billing data 前不视为强制执行的预算。
+- 轻量模型失败后可由人类选择升级；当前不实现自动 strong-model escalation。
 
 ## 标准本地命令
 

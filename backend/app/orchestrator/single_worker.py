@@ -173,6 +173,9 @@ class SingleWorkerCoordinator:
                 "Execution rules:",
                 "- The current working directory is an isolated Git worktree.",
                 "- Make only the requested code changes.",
+                "- Do not repeat the full deterministic verification suite; DevConductor "
+                "will run configured verification after implementation.",
+                "- Run only focused checks when they are necessary for the change.",
                 "- After finishing, return a concise implementation summary only.",
             ]
         )

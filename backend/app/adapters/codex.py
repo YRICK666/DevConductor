@@ -14,6 +14,7 @@ from backend.app.execution.exceptions import CommandRunnerError
 from backend.app.schemas.agent import (
     AgentExecutionRequest,
     AgentExecutionResult,
+    AgentModelProfile,
     AgentRunStatus,
     AgentUsage,
 )
@@ -39,6 +40,7 @@ class CodexAdapterConfig:
     executable: str = "codex"
     sandbox: str = "workspace-write"
     approval_policy: str = "never"
+    profile: AgentModelProfile = AgentModelProfile.MINI
     ephemeral: bool = True
     extra_args: tuple[str, ...] = field(default_factory=tuple)
 
@@ -49,6 +51,8 @@ class CodexJsonlParseResult:
 
     final_output: str | None
     session_id: str | None
+    reported_model: str | None
+    model_metadata: dict[str, object]
     usage: AgentUsage | None
     errors: list[str]
     saw_valid_event: bool
@@ -89,11 +93,15 @@ class CodexAdapter:
                 status=AgentRunStatus.STARTUP_FAILED,
                 started_at=started_at,
                 finished_at=finished_at,
+                profile=self._config.profile,
+                elapsed_seconds=(finished_at - started_at).total_seconds(),
+                attempt_count=1,
                 command_result=None,
                 errors=[f"Codex could not be started: {exc}"],
             )
 
         finished_at = datetime.now(UTC)
+        elapsed_seconds = (finished_at - started_at).total_seconds()
         parsed = parse_codex_jsonl(command_result.stdout)
         status = self._status_for(command_result, parsed)
         errors = list(parsed.errors)
@@ -110,10 +118,21 @@ class CodexAdapter:
             finished_at=finished_at,
             final_output=parsed.final_output if status is AgentRunStatus.SUCCEEDED else None,
             session_id=parsed.session_id,
+            profile=self._config.profile,
+            reported_model=parsed.reported_model,
+            model_metadata=parsed.model_metadata,
             usage=parsed.usage,
+            elapsed_seconds=elapsed_seconds,
+            attempt_count=1,
             command_result=command_result,
             errors=errors,
-            extensions={"codex": {"jsonl": True, "ephemeral": self._config.ephemeral}},
+            extensions={
+                "codex": {
+                    "jsonl": True,
+                    "ephemeral": self._config.ephemeral,
+                    "profile": self._config.profile.value,
+                }
+            },
         )
 
     def _build_command(self) -> list[str]:
@@ -123,6 +142,8 @@ class CodexAdapter:
             self._config.approval_policy,
             "--sandbox",
             self._config.sandbox,
+            "--profile",
+            self._config.profile.value,
             "exec",
             "--json",
         ]
@@ -153,6 +174,8 @@ def parse_codex_jsonl(output: str) -> CodexJsonlParseResult:
 
     final_output: str | None = None
     session_id: str | None = None
+    reported_model: str | None = None
+    model_metadata: dict[str, object] = {}
     usage: AgentUsage | None = None
     errors: list[str] = []
     saw_valid_event = False
@@ -175,22 +198,32 @@ def parse_codex_jsonl(output: str) -> CodexJsonlParseResult:
         event_type = str(event.get("type", ""))
         if event_type == "thread.started":
             session_id = _extract_session_id(event) or session_id
+            reported_model = _extract_reported_model(event) or reported_model
+            model_metadata.update(_extract_model_metadata(event))
         elif event_type == "item.completed":
             message = _extract_agent_message(event)
             if message:
                 final_output = message
         elif event_type == "turn.completed":
             usage = _extract_usage(event) or usage
+            reported_model = _extract_reported_model(event) or reported_model
+            model_metadata.update(_extract_model_metadata(event))
         elif event_type == "turn.failed":
             saw_agent_error = True
             errors.append(_extract_error_message(event, "Codex turn failed."))
+            reported_model = _extract_reported_model(event) or reported_model
+            model_metadata.update(_extract_model_metadata(event))
         elif event_type == "error":
             saw_agent_error = True
             errors.append(_extract_error_message(event, "Codex emitted an error."))
+            reported_model = _extract_reported_model(event) or reported_model
+            model_metadata.update(_extract_model_metadata(event))
 
     return CodexJsonlParseResult(
         final_output=final_output,
         session_id=session_id,
+        reported_model=reported_model,
+        model_metadata=model_metadata,
         usage=usage,
         errors=errors,
         saw_valid_event=saw_valid_event,
@@ -259,6 +292,42 @@ def _extract_usage(event: dict[str, Any]) -> AgentUsage | None:
             raw_usage.get("reasoning_output_tokens")
         ),
     )
+
+
+def _extract_reported_model(event: dict[str, Any]) -> str | None:
+    for source in _model_sources(event):
+        for key in ("model", "model_id", "model_name"):
+            value = source.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+    return None
+
+
+def _extract_model_metadata(event: dict[str, Any]) -> dict[str, object]:
+    metadata: dict[str, object] = {}
+    for source in _model_sources(event):
+        for key in (
+            "model",
+            "model_id",
+            "model_name",
+            "provider",
+            "profile",
+            "effort",
+            "reasoning_effort",
+        ):
+            value = source.get(key)
+            if isinstance(value, (str, int, float, bool)):
+                metadata[key] = value
+    return metadata
+
+
+def _model_sources(event: dict[str, Any]) -> list[dict[str, Any]]:
+    sources = [event]
+    for key in ("turn", "response", "metadata"):
+        value = event.get(key)
+        if isinstance(value, dict):
+            sources.append(value)
+    return sources
 
 
 def _optional_non_negative_int(value: Any) -> int | None:
