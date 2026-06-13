@@ -6,7 +6,7 @@ Its goal is to coordinate coding agents such as Codex, Claude Code, and DeepSeek
 
 ## Current status
 
-Stage 3: deterministic verification is being introduced.
+Stage 4: Git worktree workspace management is being introduced.
 
 The first executable milestone remains a local single-worker CLI:
 
@@ -85,4 +85,17 @@ The verifier can either continue after failures or stop after the first failed
 required verification. Non-required failures are preserved in the summary but do
 not make `required_passed` false.
 
-Adapter, worktree, API, database, frontend, approval policy, and scheduling behavior are still deferred.
+## Stage 4 workspace manager
+
+The `WorkspaceManager` creates isolated Git worktrees under
+`.worktrees/<workspace_id>/` on branches named `devconductor/<workspace_id>`.
+It resolves the requested base ref to an immutable commit before creating the
+worktree, so uncommitted changes in the main repository are not copied into the
+agent workspace.
+
+Workspace changes are collected from Git status and a temporary Git index, which
+allows diffs to include untracked file contents without changing the worktree's
+real staged or unstaged state. Removal is explicit; dirty worktrees are rejected
+unless `force=True`, and workspace branches are kept unless `delete_branch=True`.
+
+Adapter, API, database, frontend, approval policy, and scheduling behavior are still deferred.

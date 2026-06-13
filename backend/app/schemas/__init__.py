@@ -4,6 +4,7 @@ from backend.app.schemas.command import CommandResult, VerificationResult
 from backend.app.schemas.run import RunReport, RunStatus
 from backend.app.schemas.task import TaskBudget, TaskConstraints, TaskSpec
 from backend.app.schemas.verification import VerificationSpec, VerificationSummary
+from backend.app.schemas.workspace import WorkspaceChanges, WorkspaceHandle
 
 __all__ = [
     "CommandResult",
@@ -15,4 +16,6 @@ __all__ = [
     "VerificationResult",
     "VerificationSpec",
     "VerificationSummary",
+    "WorkspaceChanges",
+    "WorkspaceHandle",
 ]

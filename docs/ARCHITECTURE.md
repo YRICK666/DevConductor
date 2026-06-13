@@ -39,7 +39,20 @@ Translate a vendor-neutral execution request into a Codex, Claude Code, or DeepS
 
 ### Workspace
 
-Creates and removes isolated Git worktrees, records the base revision, and collects changed files and diffs.
+Creates and removes isolated Git worktrees under `.worktrees/<workspace_id>/`,
+records the requested base ref and resolved base commit, and collects changed
+files and diffs.
+
+The Stage 4 implementation creates branches named
+`devconductor/<workspace_id>`. Main-repository uncommitted changes do not block
+workspace creation and are not copied into the managed worktree because creation
+uses the resolved base commit.
+
+Diff collection uses Git status plus a temporary `GIT_INDEX_FILE` under
+`.worktrees/.indexes/`, so untracked file contents can be included in the diff
+without changing the worktree's real index, staged state, or unstaged state.
+Removal is explicit and conservative: dirty worktrees require `force=True`, and
+workspace branches are only deleted when requested.
 
 ### Command runner
 
@@ -75,6 +88,9 @@ The current implemented schema slice is intentionally small:
 - `VerificationResult` wraps deterministic command-backed verification.
 - `VerificationSpec` describes a deterministic verification command.
 - `VerificationSummary` records ordered verification results and derived counts.
+- `WorkspaceHandle` records a managed worktree's identity, branch, base ref, and
+  resolved base commit.
+- `WorkspaceChanges` records relative changed paths and a reviewable diff.
 - `RunReport` records worker output, changed files, diff text, verification results, errors, and human-approval status.
 
 Vendor-specific data belongs in explicit `extensions` dictionaries. Unknown top-level fields are rejected.
