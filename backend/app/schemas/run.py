@@ -7,9 +7,12 @@ from typing import Any
 
 from pydantic import Field, field_validator, model_validator
 
+from backend.app.schemas.agent import AgentExecutionResult
 from backend.app.schemas.base import ContractModel
 from backend.app.schemas.command import VerificationResult
 from backend.app.schemas.task import _validate_non_empty_string
+from backend.app.schemas.verification import VerificationSummary
+from backend.app.schemas.workspace import WorkspaceHandle
 
 
 class RunStatus(StrEnum):
@@ -37,6 +40,9 @@ class RunReport(ContractModel):
     changed_files: list[Path] = Field(default_factory=list)
     diff: str = ""
     verification_results: list[VerificationResult] = Field(default_factory=list)
+    verification_summary: VerificationSummary | None = None
+    agent_result: AgentExecutionResult | None = None
+    workspace: WorkspaceHandle | None = None
     errors: list[str] = Field(default_factory=list)
     extensions: dict[str, object] = Field(default_factory=dict)
 

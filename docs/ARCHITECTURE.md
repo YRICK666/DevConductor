@@ -33,6 +33,12 @@ TaskSpec
 
 Owns task state and sequencing. It does not contain vendor-specific CLI arguments.
 
+The Stage 6 `SingleWorkerCoordinator` runs one `TaskSpec` through a managed
+worktree, one injected `AgentAdapter`, deterministic verification, and a
+structured `RunReport`. It preserves the worktree for human review and stops at
+`awaiting_approval`, `failed`, or `cancelled`; it never commits, merges, pushes,
+or accepts changes.
+
 ### Agent adapters
 
 Translate a vendor-neutral execution request into a Codex, Claude Code,
@@ -106,7 +112,16 @@ The current implemented schema slice is intentionally small:
 - `WorkspaceHandle` records a managed worktree's identity, branch, base ref, and
   resolved base commit.
 - `WorkspaceChanges` records relative changed paths and a reviewable diff.
-- `RunReport` records worker output, changed files, diff text, verification results, errors, and human-approval status.
+- `RunReport` records worker output, changed files, diff text, agent result,
+  workspace metadata, verification summary, errors, and human-approval status.
+
+### CLI
+
+The local CLI exposes `devconductor run <task-file>`. Dry-run mode validates the
+task file and prints the planned repository, worker, verification commands, and
+budget without creating worktrees, calling agents, or running verification. A
+normal run wires concrete local components together and writes a JSON
+`RunReport` when `--output` is supplied.
 
 Vendor-specific data belongs in explicit `extensions` dictionaries. Unknown top-level fields are rejected.
 

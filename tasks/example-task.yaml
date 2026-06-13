@@ -1,0 +1,18 @@
+id: example-task
+repo_path: ./path-to-playground-repo
+objective: "Update the project README with a short setup note."
+worker: codex
+acceptance_criteria:
+  - "README includes the setup note."
+  - "No commits, merges, or pushes are created."
+test_commands:
+  - [python, -c, "print('replace with project checks')"]
+budget_max_turns: 1
+budget_timeout_seconds: 300
+budget_max_cost_usd: "0"
+constraints_allowed_files:
+  - README.md
+constraints_forbidden_operations:
+  - git commit
+  - git merge
+  - git push

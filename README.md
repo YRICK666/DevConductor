@@ -6,7 +6,7 @@ Its goal is to coordinate coding agents such as Codex, Claude Code, and DeepSeek
 
 ## Current status
 
-Stage 5: the first agent adapter, `CodexAdapter`, is being introduced.
+Stage 6: the local single-worker run loop is being introduced.
 
 The first executable milestone remains a local single-worker CLI:
 
@@ -46,6 +46,24 @@ uv run pytest
 uv run ruff check .
 uv run mypy backend
 ```
+
+## CLI usage
+
+Run a local task file with the default Codex adapter:
+
+```powershell
+uv run devconductor run tasks/example-task.yaml --adapter codex --output runs/report.json
+```
+
+Use `--dry-run` to read and validate the task file without creating a worktree,
+calling an agent, or running verification:
+
+```powershell
+uv run devconductor run tasks/example-task.yaml --dry-run
+```
+
+The example task uses a placeholder repository path. Replace it with a small
+playground Git repository before running a real agent.
 
 ## Agent instructions
 
@@ -109,5 +127,23 @@ status, final agent message, session ID, token usage, command facts, and errors.
 The prompt is sent through standard input instead of command-line arguments. The
 adapter parses JSONL output, extracts the last agent message as advisory output,
 and does not treat agent text as verification or approval.
+
+## Stage 6 single-worker run
+
+`SingleWorkerCoordinator` connects `TaskSpec`, `WorkspaceManager`,
+`AgentAdapter`, `WorkspaceChanges`, `Verifier`, and `RunReport` into one local
+run. A successful implementation plus required verification ends in
+`awaiting_approval`, preserving the worktree for human review. Failures are
+reported as `failed` or `cancelled`; the coordinator never commits, merges,
+pushes, or accepts changes.
+
+Manual Codex smoke test:
+
+1. Create a small throwaway Git repository outside this project.
+2. Prepare a TaskSpec that points at that repository and asks for one simple change.
+3. Configure any required shell environment for your Codex CLI session.
+4. Run `uv run devconductor run <task-file> --adapter codex --output runs/report.json`.
+5. Inspect the generated `.worktrees/<run_id>/`, diff, verification results, and JSON report.
+6. Confirm no commit, merge, or push happened automatically.
 
 Claude, DeepSeek, Gemini, API, database, frontend, approval policy, and scheduling behavior are still deferred.
