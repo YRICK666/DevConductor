@@ -47,6 +47,45 @@ async def test_captures_stderr(runner: CommandRunner, tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_passes_stdin_text(runner: CommandRunner, tmp_path: Path) -> None:
+    result = await runner.run(
+        python_command("import sys; print(sys.stdin.read())"),
+        cwd=tmp_path,
+        stdin_text="hello stdin",
+    )
+
+    assert result.stdout.splitlines() == ["hello stdin"]
+
+
+@pytest.mark.asyncio
+async def test_passes_chinese_stdin_text(runner: CommandRunner, tmp_path: Path) -> None:
+    result = await runner.run(
+        python_command("import sys; print(sys.stdin.read())"),
+        cwd=tmp_path,
+        stdin_text="中文输入",
+    )
+
+    assert result.stdout.splitlines() == ["中文输入"]
+
+
+@pytest.mark.asyncio
+async def test_passes_large_stdin_text_without_modifying_input(
+    runner: CommandRunner,
+    tmp_path: Path,
+) -> None:
+    stdin_text = "line\n" * 20000
+
+    result = await runner.run(
+        python_command("import sys; data = sys.stdin.read(); print(len(data))"),
+        cwd=tmp_path,
+        stdin_text=stdin_text,
+    )
+
+    assert result.stdout.splitlines() == [str(len(stdin_text))]
+    assert stdin_text == "line\n" * 20000
+
+
+@pytest.mark.asyncio
 async def test_captures_stdout_and_stderr(runner: CommandRunner, tmp_path: Path) -> None:
     result = await runner.run(
         python_command(

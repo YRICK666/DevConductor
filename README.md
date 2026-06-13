@@ -6,7 +6,7 @@ Its goal is to coordinate coding agents such as Codex, Claude Code, and DeepSeek
 
 ## Current status
 
-Stage 4: Git worktree workspace management is being introduced.
+Stage 5: the first agent adapter, `CodexAdapter`, is being introduced.
 
 The first executable milestone remains a local single-worker CLI:
 
@@ -98,4 +98,16 @@ allows diffs to include untracked file contents without changing the worktree's
 real staged or unstaged state. Removal is explicit; dirty worktrees are rejected
 unless `force=True`, and workspace branches are kept unless `delete_branch=True`.
 
-Adapter, API, database, frontend, approval policy, and scheduling behavior are still deferred.
+## Stage 5 Codex adapter
+
+Agent adapters implement a shared `AgentAdapter` interface. The vendor-neutral
+request and result models capture the task ID, prompt, workspace path, process
+status, final agent message, session ID, token usage, command facts, and errors.
+
+`CodexAdapter` invokes the local Codex CLI through `CommandRunner` as
+`codex --ask-for-approval never --sandbox workspace-write exec --json --ephemeral -`.
+The prompt is sent through standard input instead of command-line arguments. The
+adapter parses JSONL output, extracts the last agent message as advisory output,
+and does not treat agent text as verification or approval.
+
+Claude, DeepSeek, Gemini, API, database, frontend, approval policy, and scheduling behavior are still deferred.

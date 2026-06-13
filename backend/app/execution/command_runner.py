@@ -21,12 +21,14 @@ class CommandRunner:
         cwd: Path,
         timeout_seconds: float | None = None,
         env: Mapping[str, str] | None = None,
+        stdin_text: str | None = None,
     ) -> CommandResult:
         """Execute a local process and return captured execution facts."""
 
         self._validate_cwd(cwd)
         self._validate_command(command)
         command_args = list(command)
+        stdin_bytes = stdin_text.encode("utf-8") if stdin_text is not None else None
         process_env = os.environ.copy()
         if env is not None:
             process_env.update(dict(env))
@@ -37,6 +39,7 @@ class CommandRunner:
                 *command_args,
                 cwd=cwd,
                 env=process_env,
+                stdin=asyncio.subprocess.PIPE if stdin_bytes is not None else None,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -50,7 +53,7 @@ class CommandRunner:
 
         timed_out = False
         exit_code: int | None
-        communicate_task = asyncio.create_task(process.communicate())
+        communicate_task = asyncio.create_task(process.communicate(input=stdin_bytes))
         try:
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 asyncio.shield(communicate_task),
