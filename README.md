@@ -6,7 +6,7 @@ Its goal is to coordinate coding agents such as Codex, Claude Code, and DeepSeek
 
 ## Current status
 
-Stage 2: controlled local command execution is being introduced.
+Stage 3: deterministic verification is being introduced.
 
 The first executable milestone remains a local single-worker CLI:
 
@@ -73,5 +73,16 @@ inherited environment, and returns `CommandResult`.
 
 Timeout handling reliably terminates the directly started process. Full
 cross-platform process-tree termination is intentionally deferred.
+
+## Stage 3 verifier
+
+The deterministic `Verifier` accepts structured `VerificationSpec` commands,
+runs them in order through `CommandRunner`, and returns a `VerificationSummary`.
+It treats a verification as passed only when the process exits with code `0` and
+does not time out. An empty verification list returns an empty passing summary.
+
+The verifier can either continue after failures or stop after the first failed
+required verification. Non-required failures are preserved in the summary but do
+not make `required_passed` false.
 
 Adapter, worktree, API, database, frontend, approval policy, and scheduling behavior are still deferred.

@@ -42,8 +42,9 @@ class VerificationResult(ContractModel):
     """Deterministic verification produced by an executed command."""
 
     name: str
-    command_result: CommandResult
+    command_result: CommandResult | None
     passed: bool
+    required: bool = True
     details: str | None = None
 
     @field_validator("name")
