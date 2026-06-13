@@ -53,7 +53,16 @@ cross-platform process-tree termination is deferred.
 
 ### Verifier
 
-Runs deterministic tests and policy checks. A model's statement that tests passed is never accepted as proof.
+Runs deterministic verification specs in order through `CommandRunner`. It maps
+real command results to `VerificationResult` records and summarizes them in a
+`VerificationSummary`.
+
+A verification passes only when the command exits with code `0` and does not
+time out. Required verification failures make the summary fail; optional
+verification failures remain recorded without making `required_passed` false.
+An empty verification list returns an empty passing summary.
+
+A model's statement that tests passed is never accepted as proof.
 
 ### Schemas
 
@@ -64,6 +73,8 @@ The current implemented schema slice is intentionally small:
 - `TaskSpec`, `TaskConstraints`, and `TaskBudget` describe task input.
 - `CommandResult` records real process facts only.
 - `VerificationResult` wraps deterministic command-backed verification.
+- `VerificationSpec` describes a deterministic verification command.
+- `VerificationSummary` records ordered verification results and derived counts.
 - `RunReport` records worker output, changed files, diff text, verification results, errors, and human-approval status.
 
 Vendor-specific data belongs in explicit `extensions` dictionaries. Unknown top-level fields are rejected.
