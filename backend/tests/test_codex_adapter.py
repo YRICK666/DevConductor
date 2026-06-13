@@ -9,7 +9,12 @@ import pytest
 
 from backend.app.adapters import AgentAdapter, CodexAdapter, CodexAdapterConfig, parse_codex_jsonl
 from backend.app.execution import CommandRunnerError
-from backend.app.schemas.agent import AgentExecutionRequest, AgentRunStatus, AgentUsage
+from backend.app.schemas.agent import (
+    AgentExecutionRequest,
+    AgentModelProfile,
+    AgentRunStatus,
+    AgentUsage,
+)
 from backend.app.schemas.command import CommandResult
 
 
@@ -50,6 +55,8 @@ def successful_jsonl(final_text: str = "Done.") -> str:
             event("item.completed", item={"type": "agent_message", "text": final_text}),
             event(
                 "turn.completed",
+                model="gpt-test-model",
+                provider="openai",
                 usage={
                     "input_tokens": 10,
                     "cached_input_tokens": 3,
@@ -119,6 +126,8 @@ async def test_codex_command_arguments_and_execution_options(tmp_path: Path) -> 
         "never",
         "--sandbox",
         "workspace-write",
+        "--profile",
+        "mini",
         "exec",
         "--json",
         "--ephemeral",
@@ -132,6 +141,25 @@ async def test_codex_command_arguments_and_execution_options(tmp_path: Path) -> 
     assert stdin_text == "Implement this task"
     assert req.model_dump() == original
     assert result.status is AgentRunStatus.SUCCEEDED
+    assert result.profile is AgentModelProfile.MINI
+    assert result.reported_model == "gpt-test-model"
+    assert result.model_metadata["provider"] == "openai"
+    assert result.elapsed_seconds >= 0
+    assert result.attempt_count == 1
+
+
+@pytest.mark.asyncio
+async def test_codex_strong_profile_is_passed_before_exec(tmp_path: Path) -> None:
+    runner = FakeRunner(command_result(stdout=successful_jsonl()))
+
+    await CodexAdapter(
+        runner,
+        CodexAdapterConfig(profile=AgentModelProfile.STRONG),
+    ).execute(request(tmp_path))
+
+    command = runner.calls[0][0]
+    assert command[command.index("--profile") + 1] == "strong"
+    assert command.index("--profile") < command.index("exec")
 
 
 def test_codex_config_defaults_are_conservative() -> None:
@@ -139,6 +167,7 @@ def test_codex_config_defaults_are_conservative() -> None:
 
     assert config.sandbox == "workspace-write"
     assert config.approval_policy == "never"
+    assert config.profile is AgentModelProfile.MINI
     assert config.ephemeral is True
     assert config.sandbox != "danger-full-access"
 

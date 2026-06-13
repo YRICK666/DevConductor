@@ -8,6 +8,7 @@ from backend.app.adapters.base import AgentAdapter
 from backend.app.schemas.agent import (
     AgentExecutionRequest,
     AgentExecutionResult,
+    AgentModelProfile,
     AgentRunStatus,
     AgentUsage,
 )
@@ -36,7 +37,12 @@ def result(**overrides: object) -> AgentExecutionResult:
         "finished_at": started_at + timedelta(seconds=1),
         "final_output": "done",
         "session_id": "session-1",
+        "profile": AgentModelProfile.MINI,
+        "reported_model": "gpt-test-model",
+        "model_metadata": {"provider": "openai"},
         "usage": AgentUsage(input_tokens=1),
+        "elapsed_seconds": 1.0,
+        "attempt_count": 1,
         "command_result": None,
         "errors": [],
         "extensions": {},
@@ -102,6 +108,10 @@ def test_agent_execution_result_json_round_trip_and_unknown_fields() -> None:
     created = result()
 
     assert AgentExecutionResult.model_validate_json(created.model_dump_json()) == created
+    assert created.profile is AgentModelProfile.MINI
+    assert created.reported_model == "gpt-test-model"
+    assert created.elapsed_seconds == 1.0
+    assert created.attempt_count == 1
     with pytest.raises(ValidationError):
         request(model="codex")
     with pytest.raises(ValidationError):

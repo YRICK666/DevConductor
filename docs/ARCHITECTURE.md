@@ -45,15 +45,16 @@ Translate a vendor-neutral execution request into a Codex, Claude Code,
 DeepSeek, or Gemini process invocation. Adapters do not create worktrees, run
 verification, approve changes, commit, merge, or push.
 
-The Stage 5 `CodexAdapter` implements the shared `AgentAdapter` interface and
+The Stage 6.1 `CodexAdapter` implements the shared `AgentAdapter` interface and
 invokes the local Codex CLI through `CommandRunner`. It passes long prompts via
-stdin using `codex --ask-for-approval never --sandbox workspace-write exec
---json --ephemeral -`, parses JSONL events, and returns a structured
-`AgentExecutionResult`.
+stdin using `codex --ask-for-approval never --sandbox workspace-write --profile
+<mini|standard|strong> exec --json --ephemeral -`, parses JSONL events, and
+returns a structured `AgentExecutionResult`.
 
 Codex JSONL output is advisory agent output only. It can provide a final message,
-session ID, token usage, and execution errors, but it is never accepted as proof
-that tests passed or that code should be accepted.
+session ID, reported model metadata, token usage, elapsed time, attempt count,
+and execution errors, but it is never accepted as proof that tests passed or
+that code should be accepted.
 
 ### Workspace
 
@@ -103,8 +104,12 @@ Define task input, agent execution request, command result, verification result,
 The current implemented schema slice is intentionally small:
 
 - `TaskSpec`, `TaskConstraints`, and `TaskBudget` describe task input.
+  `TaskBudget.max_cost_usd` is advisory until adapters expose enforceable
+  billing data.
 - `AgentExecutionRequest`, `AgentExecutionResult`, `AgentRunStatus`, and
-  `AgentUsage` describe vendor-neutral agent invocation contracts.
+  `AgentUsage` describe vendor-neutral agent invocation contracts, including
+  selected profile, reported model metadata, token usage, elapsed time, and
+  attempt count when available.
 - `CommandResult` records real process facts only.
 - `VerificationResult` wraps deterministic command-backed verification.
 - `VerificationSpec` describes a deterministic verification command.
@@ -117,10 +122,12 @@ The current implemented schema slice is intentionally small:
 
 ### CLI
 
-The local CLI exposes `devconductor run <task-file>`. Dry-run mode validates the
-task file and prints the planned repository, worker, verification commands, and
-budget without creating worktrees, calling agents, or running verification. A
-normal run wires concrete local components together and writes a JSON
+The local CLI exposes `devconductor run <task-file>`. It accepts `--profile`
+with `mini`, `standard`, or `strong`; the default is `mini`, so runs do not
+silently inherit a global Codex model setting. Dry-run mode validates the task
+file and prints the planned repository, worker, profile, verification commands,
+and budget without creating worktrees, calling agents, or running verification.
+A normal run wires concrete local components together and writes a JSON
 `RunReport` when `--output` is supplied.
 
 Vendor-specific data belongs in explicit `extensions` dictionaries. Unknown top-level fields are rejected.
@@ -136,4 +143,5 @@ The following are intentionally deferred until the single-worker CLI works:
 - OpenAI Agents SDK
 - MCP server
 - Automatic model selection
+- Automatic strong-model escalation
 - Parallel task DAG

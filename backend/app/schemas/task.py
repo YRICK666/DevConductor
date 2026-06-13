@@ -42,10 +42,11 @@ class TaskConstraints(ContractModel):
 
 
 class TaskBudget(ContractModel):
-    """Resource limits for a task run."""
+    """Resource limits and advisory cost target for a task run."""
 
     max_turns: int = Field(gt=0)
     timeout_seconds: int = Field(gt=0)
+    # Advisory until adapters expose enforceable billing data.
     max_cost_usd: Decimal = Field(ge=Decimal("0"))
 
 

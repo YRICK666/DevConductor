@@ -55,6 +55,14 @@ Run a local task file with the default Codex adapter:
 uv run devconductor run tasks/example-task.yaml --adapter codex --output runs/report.json
 ```
 
+Codex runs use an explicit profile. Valid choices are `mini`, `standard`, and
+`strong`; the default is `mini`, so new tasks do not silently inherit a global
+Codex model configuration:
+
+```powershell
+uv run devconductor run tasks/example-task.yaml --profile standard --output runs/report.json
+```
+
 Use `--dry-run` to read and validate the task file without creating a worktree,
 calling an agent, or running verification:
 
@@ -103,6 +111,10 @@ The verifier can either continue after failures or stop after the first failed
 required verification. Non-required failures are preserved in the summary but do
 not make `required_passed` false.
 
+`max_cost_usd` in `TaskBudget` is currently advisory. It is recorded as an
+operator-supplied cost target, but DevConductor does not enforce it until
+adapters provide trustworthy billing data.
+
 ## Stage 4 workspace manager
 
 The `WorkspaceManager` creates isolated Git worktrees under
@@ -123,7 +135,9 @@ request and result models capture the task ID, prompt, workspace path, process
 status, final agent message, session ID, token usage, command facts, and errors.
 
 `CodexAdapter` invokes the local Codex CLI through `CommandRunner` as
-`codex --ask-for-approval never --sandbox workspace-write exec --json --ephemeral -`.
+`codex --ask-for-approval never --sandbox workspace-write --profile mini exec --json --ephemeral -`
+by default. The selected profile is recorded in the agent result, and reported
+model metadata is preserved when the Codex JSONL stream provides it.
 The prompt is sent through standard input instead of command-line arguments. The
 adapter parses JSONL output, extracts the last agent message as advisory output,
 and does not treat agent text as verification or approval.
@@ -136,6 +150,10 @@ run. A successful implementation plus required verification ends in
 `awaiting_approval`, preserving the worktree for human review. Failures are
 reported as `failed` or `cancelled`; the coordinator never commits, merges,
 pushes, or accepts changes.
+
+The generated agent prompt tells simple coding agents not to repeat the full
+deterministic verification suite. DevConductor runs configured verification
+after implementation; agents should run only focused checks when needed.
 
 Manual Codex smoke test:
 

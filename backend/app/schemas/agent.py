@@ -22,6 +22,14 @@ class AgentRunStatus(StrEnum):
     INVALID_OUTPUT = "invalid_output"
 
 
+class AgentModelProfile(StrEnum):
+    """Supported advisory model profiles selected by orchestration or CLI."""
+
+    MINI = "mini"
+    STANDARD = "standard"
+    STRONG = "strong"
+
+
 class AgentExecutionRequest(ContractModel):
     """Vendor-neutral request passed to an agent adapter."""
 
@@ -64,7 +72,12 @@ class AgentExecutionResult(ContractModel):
     finished_at: datetime
     final_output: str | None = None
     session_id: str | None = None
+    profile: AgentModelProfile = AgentModelProfile.MINI
+    reported_model: str | None = None
+    model_metadata: dict[str, object] = Field(default_factory=dict)
     usage: AgentUsage | None = None
+    elapsed_seconds: float = Field(default=0, ge=0)
+    attempt_count: int = Field(default=1, ge=1)
     command_result: CommandResult | None = None
     errors: list[str] = Field(default_factory=list)
     extensions: dict[str, object] = Field(default_factory=dict)

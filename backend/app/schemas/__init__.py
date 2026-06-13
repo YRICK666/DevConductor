@@ -3,6 +3,7 @@
 from backend.app.schemas.agent import (
     AgentExecutionRequest,
     AgentExecutionResult,
+    AgentModelProfile,
     AgentRunStatus,
     AgentUsage,
 )
@@ -15,6 +16,7 @@ from backend.app.schemas.workspace import WorkspaceChanges, WorkspaceHandle
 __all__ = [
     "AgentExecutionRequest",
     "AgentExecutionResult",
+    "AgentModelProfile",
     "AgentRunStatus",
     "AgentUsage",
     "CommandResult",

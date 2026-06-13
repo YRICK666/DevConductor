@@ -86,3 +86,31 @@ Use Python 3.12 and Pydantic 2 models for external and persisted contracts. Reje
 - Core schemas remain vendor-neutral.
 - Later command runner and adapter implementations can depend on typed contracts without introducing their own parsing conventions.
 
+---
+
+## ADR-005: Explicit Codex profiles and advisory cost targets
+
+**Status:** Accepted
+**Date:** 2026-06-14
+
+### Context
+
+Relying on a developer's global Codex configuration can make local task runs use
+a stronger or more expensive model than intended. At the same time,
+DevConductor does not yet receive trustworthy billing data from adapters, so it
+cannot enforce a real dollar budget.
+
+### Decision
+
+Expose explicit Codex profiles named `mini`, `standard`, and `strong`, and
+default new CLI runs to `mini`. Pass the selected profile to Codex before the
+`exec` subcommand and record the selected profile, reported model metadata,
+token usage, elapsed time, and attempt count in agent results. Treat
+`TaskBudget.max_cost_usd` as advisory until enforceable billing data exists.
+
+### Consequences
+
+- Runs no longer silently inherit the global Codex model configuration.
+- Cost intent is visible in task input and reports without pretending to enforce
+  unavailable billing facts.
+- Automatic model escalation remains a future human-approved policy decision.

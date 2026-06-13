@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from backend.app import cli
+from backend.app.schemas.agent import AgentModelProfile
 from backend.app.schemas.run import RunReport, RunStatus
 
 
@@ -78,7 +79,11 @@ def test_cli_normal_run_writes_report_and_returns_zero(
     task_file = write_task(tmp_path / "task.json")
     output = tmp_path / "report.json"
 
-    async def fake_run(task: object) -> RunReport:
+    async def fake_run(
+        task: object,
+        profile: AgentModelProfile = AgentModelProfile.MINI,
+    ) -> RunReport:
+        assert profile is AgentModelProfile.MINI
         return report()
 
     monkeypatch.setattr(cli, "_run_task", fake_run)
@@ -90,18 +95,47 @@ def test_cli_normal_run_writes_report_and_returns_zero(
     assert loaded.status is RunStatus.AWAITING_APPROVAL
 
 
+def test_cli_accepts_standard_profile_for_run(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    task_file = write_task(tmp_path / "task.json")
+    seen_profiles: list[AgentModelProfile] = []
+
+    async def fake_run(
+        task: object,
+        profile: AgentModelProfile = AgentModelProfile.MINI,
+    ) -> RunReport:
+        seen_profiles.append(profile)
+        return report()
+
+    monkeypatch.setattr(cli, "_run_task", fake_run)
+
+    assert cli.main(["run", str(task_file), "--profile", "standard"]) == 0
+    assert seen_profiles == [AgentModelProfile.STANDARD]
+
+
 def test_cli_failed_report_returns_non_zero(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     task_file = write_task(tmp_path / "task.json")
 
-    async def fake_run(task: object) -> RunReport:
+    async def fake_run(
+        task: object,
+        profile: AgentModelProfile = AgentModelProfile.MINI,
+    ) -> RunReport:
         return report(RunStatus.FAILED)
 
     monkeypatch.setattr(cli, "_run_task", fake_run)
 
     assert cli.main(["run", str(task_file)]) == 1
+
+
+def test_cli_rejects_unknown_profile(tmp_path: Path) -> None:
+    task_file = write_task(tmp_path / "task.json")
+
+    assert cli.main(["run", str(task_file), "--profile", "global-gpt-5.5"]) == 2
 
 
 def test_cli_loads_example_yaml_task() -> None:

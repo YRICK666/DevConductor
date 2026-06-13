@@ -10,9 +10,10 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from backend.app.adapters import CodexAdapter
+from backend.app.adapters import CodexAdapter, CodexAdapterConfig
 from backend.app.execution import CommandRunner
 from backend.app.orchestrator import SingleWorkerCoordinator
+from backend.app.schemas.agent import AgentModelProfile
 from backend.app.schemas.run import RunReport, RunStatus
 from backend.app.schemas.task import TaskSpec
 from backend.app.verifier import Verifier
@@ -23,7 +24,10 @@ def main(argv: list[str] | None = None) -> int:
     """Run the DevConductor CLI."""
 
     parser = _build_parser()
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as exc:
+        return exc.code if isinstance(exc.code, int) else 2
     if args.command == "run":
         return _run_command(args)
     parser.print_help()
@@ -36,6 +40,12 @@ def _build_parser() -> argparse.ArgumentParser:
     run_parser = subparsers.add_parser("run", help="Run one task file")
     run_parser.add_argument("task_file", type=Path)
     run_parser.add_argument("--adapter", default="codex")
+    run_parser.add_argument(
+        "--profile",
+        choices=[profile.value for profile in AgentModelProfile],
+        default=AgentModelProfile.MINI.value,
+        help="Codex profile to use: mini, standard, or strong. Defaults to mini.",
+    )
     run_parser.add_argument("--output", type=Path)
     run_parser.add_argument("--dry-run", action="store_true")
     return parser
@@ -53,10 +63,10 @@ def _run_command(args: argparse.Namespace) -> int:
         return 2
 
     if args.dry_run:
-        _print_dry_run(task, args.adapter)
+        _print_dry_run(task, args.adapter, AgentModelProfile(args.profile))
         return 0
 
-    report = asyncio.run(_run_task(task))
+    report = asyncio.run(_run_task(task, AgentModelProfile(args.profile)))
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(report.model_dump_json(indent=2), encoding="utf-8")
@@ -68,11 +78,14 @@ def _run_command(args: argparse.Namespace) -> int:
     return 0 if report.status is RunStatus.AWAITING_APPROVAL else 1
 
 
-async def _run_task(task: TaskSpec) -> RunReport:
+async def _run_task(
+    task: TaskSpec,
+    profile: AgentModelProfile = AgentModelProfile.MINI,
+) -> RunReport:
     command_runner = CommandRunner()
     coordinator = SingleWorkerCoordinator(
         workspace_manager=WorkspaceManager(command_runner),
-        agent_adapter=CodexAdapter(command_runner),
+        agent_adapter=CodexAdapter(command_runner, CodexAdapterConfig(profile=profile)),
         verifier=Verifier(command_runner),
     )
     return await coordinator.run(task)
@@ -151,17 +164,18 @@ def _strip_quotes(value: str) -> str:
     return value
 
 
-def _print_dry_run(task: TaskSpec, adapter: str) -> None:
+def _print_dry_run(task: TaskSpec, adapter: str, profile: AgentModelProfile) -> None:
     print(f"Task: {task.id}")
     print(f"Repository: {task.repo_path}")
     print(f"Worker: {task.worker}")
     print(f"Adapter: {adapter}")
+    print(f"Profile: {profile.value}")
     print(f"Verification commands: {len(task.test_commands)}")
     print(
         "Budget: "
         f"turns={task.budget.max_turns} "
         f"timeout_seconds={task.budget.timeout_seconds} "
-        f"max_cost_usd={task.budget.max_cost_usd}"
+        f"max_cost_usd={task.budget.max_cost_usd} (advisory)"
     )
 
 
